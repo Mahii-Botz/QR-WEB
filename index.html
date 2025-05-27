@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WhatsApp QR Login</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      padding: 20px;
+      border: 1px solid #333;
+      border-radius: 12px;
+      background-color: #1e1e1e;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    #qr-container img {
+      width: 300px;
+      height: 300px;
+      margin-top: 20px;
+    }
+
+    .note {
+      margin-top: 20px;
+      color: #bbbbbb;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Scan QR to Login</h1>
+    <div id="qr-container">
+      <p>Loading QR Code...</p>
+    </div>
+    <p class="note">Keep this tab open and scan with WhatsApp</p>
+  </div>
+
+  <script>
+    async function fetchQR() {
+      try {
+        const res = await fetch('/qr');
+        const html = await res.text();
+        const match = html.match(/<img src="(data:image\/png;base64,[^"]+)"/);
+
+        if (match && match[1]) {
+          document.getElementById('qr-container').innerHTML = `<img src="${match[1]}" alt="QR Code"/>`;
+        } else {
+          document.getElementById('qr-container').innerHTML = `<p>QR not ready. Refreshing...</p>`;
+        }
+      } catch (err) {
+        document.getElementById('qr-container').innerHTML = `<p>Error loading QR. Retrying...</p>`;
+      }
+    }
+
+    // Initial load and refresh every 5 seconds
+    fetchQR();
+    setInterval(fetchQR, 5000);
+  </script>
+</body>
+</html>
