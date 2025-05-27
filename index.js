@@ -10,7 +10,7 @@ const {
   fetchLatestBaileysVersion,
   Browsers,
 } = require("@whiskeysockets/baileys");
-const { File } = require("megajs");
+const { upload } = require("./mega"); // Updated to use your fixed uploader
 
 const app = express();
 const PORT = 8000;
@@ -18,28 +18,13 @@ const PORT = 8000;
 let qrCodeData = null;
 let currentSocket = null;
 
-// Serve static files from public folder (optional for frontend)
+// Serve static files from the public folder
 app.use(express.static("public"));
 
-// Redirect root path to /qr
-app.get("/", (req, res) => {
-  res.redirect("/qr");
-});
-
-// Serve QR code page
-app.get("/qr", (req, res) => {
-  if (!qrCodeData) {
-    return res.send("QR not ready. Please refresh in a moment.");
-  }
-  res.send(`
-    <html>
-      <head><title>WhatsApp Login</title></head>
-      <body style="text-align: center; font-family: sans-serif;">
-        <h1>Scan QR to Login</h1>
-        <img src="${qrCodeData}" alt="QR Code" />
-      </body>
-    </html>
-  `);
+// Endpoint to return the QR code image
+app.get("/qr-code", async (req, res) => {
+  if (!qrCodeData) return res.status(503).send("QR not ready");
+  res.send(qrCodeData);
 });
 
 // WhatsApp + MEGA Integration
@@ -69,13 +54,7 @@ async function connectToWhatsApp() {
 
       setTimeout(async () => {
         try {
-          const file = new File({
-            name: "creds.json",
-            data: fs.readFileSync("./auth_info_baileys/creds.json"),
-          });
-
-          const upload = await file.upload();
-          const link = upload.link();
+          const link = await upload("./auth_info_baileys/creds.json", "creds.json");
           const id = link.split("/").pop();
 
           const number = sock.user.id.split(":")[0] + "@s.whatsapp.net";
@@ -108,8 +87,7 @@ async function connectToWhatsApp() {
   sock.ev.on("creds.update", saveCreds);
 }
 
-// Start the server
 app.listen(PORT, () => {
-  console.log(`🌐 Server running at http://localhost:${PORT}/qr`);
+  console.log(`🌐 Server running at http://localhost:${PORT}`);
   connectToWhatsApp();
 });
